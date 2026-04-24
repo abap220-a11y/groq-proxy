@@ -47,6 +47,28 @@ app.post("/ai", async (req, res) => {
     }
 });
 
+app.post("/ai-stream", async (req, res) => {
+    try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${getGroqKey()}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ ...req.body, stream: true }),
+        });
+
+        res.setHeader("Content-Type", "text/event-stream");
+        res.setHeader("Cache-Control", "no-cache");
+        res.setHeader("Connection", "keep-alive");
+
+        response.body.pipe(res);
+    } catch (e) {
+        res.write(`data: ${JSON.stringify({ error: "Proxy stream failed" })}\n\n`);
+        res.end();
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
