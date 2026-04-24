@@ -25,4 +25,16 @@ app.post("/ai", async (req, res) => {
     }
 });
 
+app.get("/debug-key", (req, res) => {
+    const key = process.env.GROQ_API_KEY || "";
+
+    res.json({
+        exists: !!key,
+        length: key.length,
+        starts_with_gsk: key.startsWith("gsk_"),
+        first_8: key.slice(0, 8),
+        last_4: key.slice(-4),
+    });
+});
+
 app.listen(PORT, () => console.log(`Proxy running on port ${PORT}`));
