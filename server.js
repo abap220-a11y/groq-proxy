@@ -37,4 +37,20 @@ app.get("/debug-key", (req, res) => {
     });
 });
 
+app.get("/debug-env", (req, res) => {
+    const env = {};
+
+    for (const key of Object.keys(process.env)) {
+        const val = process.env[key];
+
+        if (typeof val === "string" && val.length > 8) {
+            env[key] = val.slice(0, 6) + "...";
+        } else {
+            env[key] = val;
+        }
+    }
+
+    res.json(env);
+});
+
 app.listen(PORT, () => console.log(`Proxy running on port ${PORT}`));
