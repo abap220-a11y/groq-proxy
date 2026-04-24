@@ -2,31 +2,19 @@ import express from "express";
 import fetch from "node-fetch";
 
 const app = express();
-app.use(express.json());
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-const PORT = process.env.PORT || 3000;
+app.use(express.json({ limit: "2mb" }));
 
-app.post("/ai", async (req, res) => {
-    try {
-        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${GROQ_API_KEY}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(req.body)
-        });
+function getGroqKey() {
+    return (process.env.GROQ_API_KEY || "").replace(/^["']|["']$/g, "").trim();
+}
 
-        const data = await response.json();
-        res.json(data);
-    } catch (e) {
-        res.status(500).json({ error: "Proxy failed" });
-    }
+app.get("/", (req, res) => {
+    res.json({ ok: true, service: "groq-proxy" });
 });
 
 app.get("/debug-key", (req, res) => {
-    const key = process.env.GROQ_API_KEY || "";
+    const key = getGroqKey();
 
     res.json({
         exists: !!key,
@@ -37,20 +25,30 @@ app.get("/debug-key", (req, res) => {
     });
 });
 
-app.get("/debug-env", (req, res) => {
-    const env = {};
+app.post("/ai", async (req, res) => {
+    try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${getGroqKey()}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(req.body),
+        });
 
-    for (const key of Object.keys(process.env)) {
-        const val = process.env[key];
+        const data = await response.json();
 
-        if (typeof val === "string" && val.length > 8) {
-            env[key] = val.slice(0, 6) + "...";
-        } else {
-            env[key] = val;
-        }
+        res.status(response.status).json(data);
+    } catch (e) {
+        res.status(500).json({
+            error: "Proxy failed",
+            details: e.message,
+        });
     }
-
-    res.json(env);
 });
 
-app.listen(PORT, () => console.log(`Proxy running on port ${PORT}`));
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+    console.log(`Groq proxy running on port ${PORT}`);
+});
