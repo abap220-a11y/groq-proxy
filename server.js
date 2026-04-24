@@ -5,6 +5,7 @@ const app = express();
 app.use(express.json());
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const PORT = process.env.PORT || 3000;
 
 app.post("/ai", async (req, res) => {
     try {
@@ -24,4 +25,4 @@ app.post("/ai", async (req, res) => {
     }
 });
 
-app.listen(3000, () => console.log("Proxy running"));
+app.listen(PORT, () => console.log(`Proxy running on port ${PORT}`));
